@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>积分制规则</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", sans-serif;
+        }
+        body {
+            background-color: #fff;
+            padding: 20px;
+        }
+        .admin-btn {
+            position: fixed;
+            top: 10px;
+            right: 20px;
+            background: red;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            z-index: 999;
+        }
+        .logout-btn {
+            position: fixed;
+            top: 10px;
+            right: 120px;
+            background: #666;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            z-index: 999;
+            display: none;
+        }
+        .super-admin-trigger {
+            position: fixed;
+            top: 10px;
+            left: 20px;
+            width: 50px;
+            height: 30px;
+            z-index: 999;
+            cursor: pointer;
+            opacity: 0;
+        }
+        .super-btn {
+            position: fixed;
+            top: 10px;
+            left: 80px;
+            background: #222;
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            z-index: 999;
+            display: none;
+        }
+        .login-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .login-box {
+            background: #fff;
+            width: 320px;
+            margin: 150px auto;
+            padding: 25px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid red;
+        }
+        .login-box h3 {
+            color: red;
+            margin-bottom: 15px;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid red;
+            border-radius: 4px;
+            color: red;
+        }
+        .login-box button {
+            background: red;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 12px;
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: red;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h2 {
+            color: red;
+            margin-bottom: 20px;
+            font-size: 1.6em;
+            border-bottom: 2px solid red;
+            padding-bottom: 10px;
+        }
+        .rule-textarea, .reward-textarea {
+            width: 100%;
+            border: none;
+            color: red;
+            font-size: 1.1em;
+            line-height: 1.8;
+            resize: none;
+            background: transparent;
+            outline: none;
+            overflow: hidden;
+            opacity: 1;
+            /* 给初始最小高度，防止空白不显示 */
+            min-height: 240px;
+        }
+        .score-box {
+            border: 2px solid red;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 35px;
+        }
+        .score-item {
+            color: red;
+            font-size: 1.2em;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .score-input {
+            width: 100px;
+            padding: 5px;
+            border: 1px solid red;
+            color: red;
+            font-size: 1em;
+            margin-left: 10px;
+            display: none;
+        }
+        .save-btn {
+            background: red;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            margin-top: 15px;
+            cursor: pointer;
+            display: none;
+        }
+        .footer {
+            text-align: center;
+            color: red;
+            font-size: 0.9em;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="super-admin-trigger" onclick="showSuperBtn()"></div>
+<button class="super-btn" id="superBtn" onclick="openSuperLogin()">超级管理</button>
+
+<button class="admin-btn" onclick="openLogin()">管理员登录</button>
+<button class="logout-btn" id="logoutBtn" onclick="logoutAdmin()">退出管理员</button>
+
+<div class="login-modal" id="loginModal">
+    <div class="login-box">
+        <h3>管理员登录</h3>
+        <input type="password" id="pwdInput" placeholder="输入管理员密码">
+        <br>
+        <button onclick="adminLogin()">确定</button>
+        <button onclick="closeLogin()">取消</button>
+    </div>
+</div>
+
+<div class="login-modal" id="superLoginModal">
+    <div class="login-box">
+        <h3>超级管理员验证</h3>
+        <input type="password" id="superPwdInput" placeholder="输入超级管理员密码">
+        <br>
+        <button onclick="superLogin()">确定</button>
+        <button onclick="closeSuperLogin()">取消</button>
+    </div>
+</div>
+
+<div class="login-modal" id="changePwdModal">
+    <div class="login-box">
+        <h3>修改管理员登录密码</h3>
+        <input type="password" id="newAdminPwd" placeholder="输入新的管理员密码">
+        <br>
+        <button onclick="saveNewPwd()">保存修改</button>
+        <button onclick="closeChangePwd()">退出超级管理</button>
+    </div>
+</div>
+
+<div class="container">
+    <h1>积分制规则</h1>
+
+    <div class="score-box">
+        <div class="score-item">今日积分：<span id="showToday">0</span><input type="number" class="score-input" id="today"></div>
+        <div class="score-item">当前积分：<span id="showNow">0</span><input type="number" class="score-input" id="now"></div>
+        <div class="score-item">已获得积分：<span id="showGet">0</span><input type="number" class="score-input" id="get"></div>
+        <div class="score-item">已用积分：<span id="showUsed">0</span><input type="number" class="score-input" id="used"></div>
+        <div class="score-item">剩余积分：<span id="showLeft">0</span><input type="number" class="score-input" id="left"></div>
+        <button class="save-btn" id="saveBtn" onclick="saveScore()">保存积分</button>
+    </div>
+
+    <div class="section">
+        <h2>积分规则</h2>
+        <textarea class="rule-textarea" id="ruleText" readonly>1.每天定时续火花+1积分，从星期一开始计算，期间只要未续火花一次-1积分
+2.星期五放学时16:25打到车+1积分，16:25以后打到车+0.5积分
+3.星期五放学17:30回到家中+5积分
+4.到第2个星期全部清零，重新开始计算
+5.星期六星期日不计入积分奖励
+6.所兑换的每样物品不可与其他物品叠加
+7.如有剩余积分可在星期六兑换
+8.一周全勤可+5积分
+9.星期六兑换时不得超过6积分</textarea>
+    </div>
+
+    <div class="section">
+        <h2>积分兑换奖励</h2>
+        <textarea class="reward-textarea" id="rewardText" readonly>1.全部兑换为零钱但减半再-1
+2.兑换5元零食 15积分
+3.随机小礼品(0≤20)样 10积分
+4.三包魔芋爽 3积分
+5.随机红包奖励(0≤5) 5积分
+6.随机余额奖励(0≤5) 6积分
+7.精致项链一条(需要一周全勤+续火花不断+星期五16:25打车 可兑换) 20积分</textarea>
+    </div>
+
+    <div class="footer">
+        <p>最终解释权归管理员所有</p>
+    </div>
+</div>
+
+<script>
+let adminPwd = localStorage.getItem("adminPwd") || "123456";
+const superPwd = "888888";
+
+function loadText() {
+    let rule = localStorage.getItem("ruleText");
+    let reward = localStorage.getItem("rewardText");
+    if (rule) document.getElementById("ruleText").value = rule;
+    if (reward) document.getElementById("rewardText").value = reward;
+    //  dom加载完成立即适配高度
+    setTimeout(autoResizeTextarea,100);
+}
+
+function autoResizeTextarea() {
+    let rTxt = document.getElementById("ruleText");
+    let reTxt = document.getElementById("rewardText");
+    rTxt.style.height = "auto";
+    reTxt.style.height = "auto";
+    rTxt.style.height = rTxt.scrollHeight + "px";
+    reTxt.style.height = reTxt.scrollHeight + "px";
+}
+
+// 超级管理员
+function showSuperBtn() {
+    document.getElementById("superBtn").style.display = "inline-block";
+}
+function openSuperLogin() {
+    document.getElementById("superLoginModal").style.display = "block";
+    document.getElementById("superPwdInput").value = "";
+}
+function closeSuperLogin() {
+    document.getElementById("superLoginModal").style.display = "none";
+}
+function superLogin() {
+    let pwd = document.getElementById("superPwdInput").value.trim();
+    if (pwd === superPwd) {
+        closeSuperLogin();
+        document.getElementById("changePwdModal").style.display = "block";
+    } else {
+        alert("超级管理员密码错误！");
+        document.getElementById("superPwdInput").value = "";
+    }
+}
+function saveNewPwd() {
+    let newPwd = document.getElementById("newAdminPwd").value.trim();
+    if (newPwd === "") {
+        alert("密码不能为空！");
+        return;
+    }
+    adminPwd = newPwd;
+    localStorage.setItem("adminPwd", newPwd);
+    alert("管理员密码修改成功！");
+    closeChangePwd();
+}
+function closeChangePwd() {
+    document.getElementById("changePwdModal").style.display = "none";
+    document.getElementById("superBtn").style.display = "none";
+}
+
+// 普通管理员
+function openLogin() {
+    document.getElementById("loginModal").style.display = "block";
+    document.getElementById("pwdInput").value = "";
+}
+function closeLogin() {
+    document.getElementById("loginModal").style.display = "none";
+}
+
+function adminLogin() {
+    let pwd = document.getElementById("pwdInput").value.trim();
+    if (pwd === adminPwd) {
+        alert("登录成功，可以修改积分及规则文本！");
+        closeLogin();
+        let inputs = document.getElementsByClassName("score-input");
+        for (let i = 0; i < inputs.length; i++) {
+            inputs[i].style.display = "inline-block";
+        }
+        document.getElementById("saveBtn").style.display = "block";
+        document.getElementById("logoutBtn").style.display = "block";
+
+        document.getElementById("ruleText").readOnly = false;
+        document.getElementById("rewardText").readOnly = false;
+
+        document.getElementById("today").value = document.getElementById("showToday").innerText;
+        document.getElementById("now").value = document.getElementById("showNow").innerText;
+        document.getElementById("get").value = document.getElementById("showGet").innerText;
+        document.getElementById("used").value = document.getElementById("showUsed").innerText;
+        document.getElementById("left").value = document.getElementById("showLeft").innerText;
+        autoResizeTextarea();
+    } else {
+        alert("密码错误！请重新输入");
+        document.getElementById("pwdInput").value = "";
+    }
+}
+
+function logoutAdmin() {
+    let inputs = document.getElementsByClassName("score-input");
+    for (let i = 0; i < inputs.length; i++) {
+        inputs[i].style.display = "none";
+    }
+    document.getElementById("saveBtn").style.display = "none";
+    document.getElementById("logoutBtn").style.display = "none";
+
+    document.getElementById("ruleText").readOnly = true;
+    document.getElementById("rewardText").readOnly = true;
+
+    localStorage.setItem("ruleText", document.getElementById("ruleText").value);
+    localStorage.setItem("rewardText", document.getElementById("rewardText").value);
+    autoResizeTextarea();
+    alert("已退出管理员模式");
+}
+
+function saveScore() {
+    let today = document.getElementById("today").value;
+    let now = document.getElementById("now").value;
+    let get = document.getElementById("get").value;
+    let used = document.getElementById("used").value;
+    let left = document.getElementById("left").value;
+
+    localStorage.setItem("today", today);
+    localStorage.setItem("now", now);
+    localStorage.setItem("get", get);
+    localStorage.setItem("used", used);
+    localStorage.setItem("left", left);
+
+    getScore();
+    alert("积分保存成功！");
+}
+
+function getScore() {
+    document.getElementById("showToday").innerText = localStorage.getItem("today") || 0;
+    document.getElementById("showNow").innerText = localStorage.getItem("now") || 0;
+    document.getElementById("showGet").innerText = localStorage.getItem("get") || 0;
+    document.getElementById("showUsed").innerText = localStorage.getItem("used") || 0;
+    document.getElementById("showLeft").innerText = localStorage.getItem("left") || 0;
+}
+
+window.onload = function () {
+    getScore();
+    loadText();
+};
+
+document.getElementById("ruleText").addEventListener("input", autoResizeTextarea);
+document.getElementById("rewardText").addEventListener("input", autoResizeTextarea);
+</script>
+
+</body>
+</html>
